@@ -18,6 +18,7 @@ export const GlobalStoreActionType = {
     LOAD_ID_NAME_PAIRS: "LOAD_ID_NAME_PAIRS",
     SET_CURRENT_LIST: "SET_CURRENT_LIST",
     SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
+
 }
 
 // WE'LL NEED THIS TO PROCESS TRANSACTIONS
@@ -102,6 +103,15 @@ export const useGlobalStore = () => {
                     listNameActive: true
                 });
             }
+
+            case GlobalStoreActionType.DELETE_PLAYLIST: {
+                return setStore({
+                    idNamePairs: payload.idNamePairs,
+                    currentList: null,
+                    newListCounter: store.newListCounter - 1,
+                    listNameActive: false
+                })
+            }
             default:
                 return store;
         }
@@ -116,7 +126,7 @@ export const useGlobalStore = () => {
         async function asyncChangeListName(id) {
             let response = await api.getPlaylistById(id);
             if (response.data.success) {
-                let playlist = response.data.playist;
+                let playlist = response.data.playlist;
                 playlist.name = newName;
                 async function updateList(playlist) {
                     response = await api.updatePlaylistById(playlist._id, playlist);
@@ -149,6 +159,49 @@ export const useGlobalStore = () => {
             type: GlobalStoreActionType.CLOSE_CURRENT_LIST,
             payload: {}
         });
+    }
+
+    store.createNewList = async function(){
+        async function asyncCreateNewList(){
+            let newList = {
+                name: 'Untitled',
+                songs:[]
+            }
+            let response = await api.createNewList(newList);
+            if(response.data.success){
+                console.log(response)
+                let playlist = response.data.playlist;
+                //console.log(playlist);
+                let pair = store.idNamePairs;
+                let newpair = {
+                    _id: playlist._id, 
+                    name: playlist.name
+                }
+                pair.push(newpair);
+                //console.log(pair);
+                storeReducer({
+                    type: GlobalStoreActionType.CREATE_NEW_LIST,
+                    payload: playlist
+                });
+                
+            }
+            return response.data.playlist._id;
+        }
+        let id = await asyncCreateNewList();
+        store.history.push("/playlist/" + id)
+        console.log(store.history)
+    }
+
+    store.deleteList = function(id){
+        async function asyncDeleteList(id){
+            const response = await api.getPlaylistById(id);
+            if(response.data.success){
+                storeReducer({
+                    type: GlobalStoreActionType.MARK_LIST_FOR_DELETION
+                })
+            }
+        }
+        asyncDeleteList(id);
     }
 
     // THIS FUNCTION LOADS ALL THE ID, NAME PAIRS SO WE CAN LIST ALL THE LISTS
@@ -186,6 +239,7 @@ export const useGlobalStore = () => {
         }
         asyncSetCurrentList(id);
     }
+     
     store.getPlaylistSize = function() {
         return store.currentList.songs.length;
     }
@@ -197,7 +251,7 @@ export const useGlobalStore = () => {
     }
 
     // THIS FUNCTION ENABLES THE PROCESS OF EDITING A LIST NAME
-    store.setlistNameActive = function () {
+    store.setIsListNameEditActive = function () {
         storeReducer({
             type: GlobalStoreActionType.SET_LIST_NAME_EDIT_ACTIVE,
             payload: null

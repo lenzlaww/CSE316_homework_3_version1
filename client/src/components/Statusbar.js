@@ -8,6 +8,7 @@ import { GlobalStoreContext } from '../store'
 function Statusbar() {
     const { store } = useContext(GlobalStoreContext);
     let text ="";
+    //console.log(store)
     if (store.currentList)
         text = store.currentList.name;
     return (

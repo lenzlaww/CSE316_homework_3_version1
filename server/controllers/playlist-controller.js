@@ -1,3 +1,4 @@
+//const { updatePlaylistById } = require('../../client/src/api');
 const Playlist = require('../models/playlist-model')
 /*
     This is our back-end API. It provides all the data services
@@ -87,9 +88,57 @@ getPlaylistPairs = async (req, res) => {
     }).catch(err => console.log(err))
 }
 
+deletePlaylist = async (req, res) =>{
+    await Playlist.deleteOne({_id: req.params.id}, (err,list) => {
+        if(err){
+            return res.status(400).json({ success: false, error: err})
+        }
+        return res.status(200).json({ success: true, playlist: list })
+    }).catch(err => console.log(err))
+}
+
+updatePlaylistById = async (req, res) =>{
+    const body = req.body;
+    console.log(body);
+
+    if (!body) {
+        return res.status(400).json({
+            success: false,
+            error: 'You must provide a name',
+        })
+    }
+
+    let resp = await Playlist.updateOne({_id: req.params.id}, {$set: {'name': body.name} })
+
+        if(resp.modifiedCount == 0){
+            return res.status(400).json({
+                    error,
+                    message: 'Playlist Name Not Changed!',
+        })}
+        return res.status(201).json({
+                    success: true,
+                    message: 'Playlist Name Changed!',
+                })
+        // playlist.save().then(()=>{
+        //     return res.status(201).json({
+        //         success: true,
+        //         playlist: playlist,
+        //         message: 'Playlist Name Changed!',
+        //     })
+        // }).catch(error =>{
+        //     return res.status(400).json({
+        //         error,
+        //         message: 'Playlist Name Not Changed!',
+        //     })
+        // })
+    
+}
+
 module.exports = {
     createPlaylist,
     getPlaylists,
     getPlaylistPairs,
-    getPlaylistById
+    getPlaylistById,
+    updatePlaylistById,
+    deletePlaylist,
 }
